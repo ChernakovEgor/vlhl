@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Video</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+
+    <h1>Upload Video to Server</h1>
+
+    <!-- Form for uploading video -->
+    <form id="uploadForm" enctype="multipart/form-data">
+        <label for="videoFile">Select Video to Upload:</label>
+        <input type="file" name="videoFile" id="videoFile" accept="video/mp4,video/x-m4v,video/*" required>
+        <br><br>
+        <input type="submit" value="Upload Video">
+    </form>
+
+    <!-- Area to display upload message -->
+    <div id="responseMessage"></div>
+
+    <script>
+        $(document).ready(function(){
+            $("#uploadForm").submit(function(event){
+                event.preventDefault();  // Prevent the default form submission
+
+                // Create FormData object to send the file data
+                var formData = new FormData(this);
+
+                // Send the form data using AJAX
+                $.ajax({
+                    url: "http://localhost:8090/upload",  // URL of the Go server's upload endpoint
+                    type: "POST",
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(response){
+                        // On successful upload, display the success message
+                        $("#responseMessage").html("<p>File uploaded successfully!</p>");
+                    },
+                    error: function(xhr, status, error){
+                        // Handle errors (e.g., if the upload fails)
+                        console.log("XHR Status: " + xhr.status);  // Log the HTTP status code
+                        console.log("Error Status: " + status);    // Log the error status
+                        console.log("Error Message: " + error);    // Log the error message
+                        $("#responseMessage").html("<p>Error uploading the file. Please try again.</p>");
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

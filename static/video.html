@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Timestamp Example</title>
+</head>
+<body>
+    <h1>Get Video Timestamp on Pause</h1>
+
+    <!-- Video Element -->
+    <video id="myVideo" width="600" controls>
+        <source src="uploadedVideo.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <br><br>
+    <!-- Display the timestamp -->
+    <button id="getTimestampBtn">Get Timestamp</button>
+    <p>Current Video Timestamp: <span id="timestamp">0</span> seconds</p>
+
+    <script>
+        const video = document.getElementById('myVideo');
+        const timestampDisplay = document.getElementById('timestamp');
+        const getTimestampBtn = document.getElementById('getTimestampBtn');
+
+        // Add event listener to get the timestamp when the video is paused
+        video.addEventListener('pause', function() {
+            const currentTime = video.currentTime;
+            timestampDisplay.textContent = currentTime.toFixed(2); // Display timestamp with 2 decimals
+        });
+
+        // Optional: If you want to get the timestamp on button click instead
+        getTimestampBtn.addEventListener('click', function() {
+            if (video.paused) {
+                const currentTime = video.currentTime;
+                timestampDisplay.textContent = currentTime.toFixed(2); // Display timestamp with 2 decimals
+            } else {
+                alert('Video is still playing. Pause the video first to get the timestamp.');
+            }
+        });
+    </script>
+</body>
+</html>

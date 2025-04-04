@@ -1,0 +1,5 @@
+volley_highlights
+*.db
+.env
+./media/
+go.sum
