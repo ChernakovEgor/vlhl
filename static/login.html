@@ -86,9 +86,12 @@
                 },
                 body: JSON.stringify({ token: token }) // Send token as JSON
             })
-            .then(response => response.json())
-            .then(data => {
-              window.location.replace("/static/home.html")
+            .then(response => {
+              if (response.ok) {
+                window.location.href = "http://localhost:8080/static/home.html"
+              } else {
+                console.log("invalid token")
+              }
             })
             .catch(error => {
                 // Handle errors (network issues, server errors, etc.)

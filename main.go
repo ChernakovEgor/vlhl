@@ -2,15 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 const TOKEN = "token"
@@ -19,6 +17,7 @@ const SECRET = "secret"
 func main() {
 	http.HandleFunc("POST /api/v1/login", handleLogin)
 	http.HandleFunc("POST /api/v1/upload", handleUpload)
+	// http.HandleFunc("GET /static/", sessionMiddleware(http.StripPrefix("/static/", http.FileServer(http.Dir("./static")))))
 	http.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	http.HandleFunc("GET /", handleLanding)
 
@@ -27,7 +26,6 @@ func main() {
 }
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.Cookies())
 	tokenJSON := struct {
 		Token string `json:"token"`
 	}{}
@@ -46,22 +44,18 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Successful login from %s with %s", r.RemoteAddr, tokenJSON.Token)
 
-	log.Println("Generating JWT")
-	tokenString, err := generateJWT(time.Hour)
-	if err != nil {
-		log.Printf("generating token: %v", err)
-	}
+	sessionID := uuid.New().String()
+	log.Printf("Starting session %s", sessionID)
 
-	responseBytes, err := json.Marshal(struct {
-		Token string `json:"token"`
-	}{
-		Token: tokenString,
-	})
-	if err != nil {
-		log.Printf("erro marshaling token: %v", err)
+	sessionCookie := &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionID,
+		Expires:  time.Now().Add(time.Hour),
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
 	}
-
-	w.Write(responseBytes)
+	http.SetCookie(w, sessionCookie)
+	w.WriteHeader(http.StatusOK)
 }
 
 func handleLanding(w http.ResponseWriter, r *http.Request) {
@@ -70,13 +64,6 @@ func handleLanding(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	log.Println(r.Cookies())
-	c := &http.Cookie{
-		Name:    "server-set-cookie",
-		Value:   "my suctom cookie",
-		Expires: time.Now().Add(time.Hour),
-	}
-	http.SetCookie(w, c)
 	http.ServeFile(w, r, "./static/login.html")
 }
 
@@ -118,62 +105,14 @@ func handleUpload(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("File uploaded!"))
 }
 
-func generateJWT(expiresIn time.Duration) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Issuer:    "vlhl",
-		IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
-	})
-
-	tokenString, err := token.SignedString([]byte(SECRET))
-	if err != nil {
-		return "", fmt.Errorf("signing token: %v", err)
-	}
-	return tokenString, nil
-}
-
-func validateJWT(tokenString string) (bool, error) {
-	claims := jwt.RegisteredClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) { return []byte(SECRET), nil })
-	if err != nil {
-		return false, err
-	}
-	issuer, err := token.Claims.GetIssuer()
-	if err != nil {
-		return false, err
-	}
-
-	log.Println("tokene validated, issuer is", issuer)
-	return true, nil
-}
-
-func corsMiddleware(handler http.Handler) func(w http.ResponseWriter, r *http.Request) {
+func sessionMiddleware(s http.Handler) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		handler.ServeHTTP(w, r)
-	}
-}
-
-func jwtMiddleware(handler http.Handler) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		headerToken := r.Header.Get("Authorization")
-		tokenString := strings.TrimPrefix(headerToken, "Bearer ")
-		valid, err := validateJWT(tokenString)
+		sessionCookie, err := r.Cookie("session_id")
 		if err != nil {
-			log.Printf("validating jwt: %v", err)
+			log.Printf("No cookie found.")
 		}
-		if !valid {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		handler.ServeHTTP(w, r)
+		log.Printf("Found cookie: %s", sessionCookie.Value)
+
+		s.ServeHTTP(w, r)
 	}
 }
