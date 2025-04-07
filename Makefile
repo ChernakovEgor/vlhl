@@ -14,7 +14,8 @@ test:
 	go test ./...
 
 run:
-	go build && ./sl_backend
+	go build && ./vl_hl
 
 clean:
 	go clean
+

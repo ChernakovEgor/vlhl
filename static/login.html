@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        /* Apply box-sizing globally to prevent overflow */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .submit-btn:hover {
+            background-color: #45a049;
+        }
+        .error-message {
+            color: red;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Login</h2>
+        <form id="loginForm" action="javascript:void(0)">
+            <input type="text" id="token" class="input-field" placeholder="Enter your token" required>
+            <button type="submit" class="submit-btn">Login</button>
+        </form>
+        <div id="errorMessage" class="error-message"></div>
+    </div>
+
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            // Get the token from the input field
+            const token = document.getElementById("token").value;
+
+            // Validate token input (can be adjusted based on your needs)
+            if (!token) {
+                document.getElementById("errorMessage").innerText = "Token is required!";
+                return;
+            }
+
+            // Send the token to the server via a POST request (AJAX)
+            fetch('http://localhost:8080/api/v1/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ token: token }) // Send token as JSON
+            })
+            .then(response => response.json())
+            .then(data => {
+              window.location.replace("/static/home.html")
+            })
+            .catch(error => {
+                // Handle errors (network issues, server errors, etc.)
+                console.error("Error:", error);
+                document.getElementById("errorMessage").innerText = "An error occurred. Please try again.";
+            });
+        });
+    </script>
+</body>
+</html>

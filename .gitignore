@@ -3,3 +3,4 @@ volley_highlights
 .env
 ./media/
 go.sum
+.DS_Store
