@@ -16,10 +16,7 @@ func main() {
 	}
 
 	sessions := make(map[string]time.Time)
-	cfg := apiConfig{
-		password: os.Getenv("PASSWORD"),
-		sessions: &sessions,
-	}
+	cfg := NewApiConfig(os.Getenv("PASSWORD"), &sessions)
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /api/v1/login", cfg.handleLogin)

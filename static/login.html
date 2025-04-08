@@ -63,7 +63,7 @@
     <div class="login-container">
         <h2>Login</h2>
         <form id="loginForm" action="javascript:void(0)">
-            <input type="text" id="token" class="input-field" placeholder="Enter your token" required>
+            <input type="text" id="password" class="input-field" placeholder="Enter your password" required>
             <button type="submit" class="submit-btn">Login</button>
         </form>
         <div id="errorMessage" class="error-message"></div>
@@ -73,33 +73,31 @@
         document.getElementById("loginForm").addEventListener("submit", function(event) {
             event.preventDefault(); // Prevent the default form submission
 
-            // Get the token from the input field
-            const token = document.getElementById("token").value;
+            // Get the password from the input field
+            const password = document.getElementById("password").value;
 
-            // Validate token input (can be adjusted based on your needs)
-            if (!token) {
-                document.getElementById("errorMessage").innerText = "Token is required!";
+            // Validate password input (can be adjusted based on your needs)
+            if (!password) {
+                document.getElementById("errorMessage").innerText = "password is required!";
                 return;
             }
 
-            // Send the token to the server via a POST request (AJAX)
+            // Send the password to the server via a POST request (AJAX)
             fetch('http://localhost:8080/api/v1/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ token: token }) // Send token as JSON
+                body: JSON.stringify({ password: password }) // Send password as JSON
             })
             .then(response => {
               if (response.ok) {
                 window.location.href = "http://localhost:8080/home"
               } else {
-                console.log("invalid token")
+                document.getElementById("errorMessage").innerText = "An error occurred. Please try again.";
               }
             })
             .catch(error => {
-                // Handle errors (network issues, server errors, etc.)
-                console.error("Error:", error);
                 document.getElementById("errorMessage").innerText = "An error occurred. Please try again.";
             });
         });

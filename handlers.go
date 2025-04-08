@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"log"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,8 +12,32 @@ import (
 )
 
 type apiConfig struct {
-	password string
-	sessions *map[string]time.Time
+	password        string
+	sessions        *map[string]time.Time
+	sessionDuration time.Duration
+}
+
+func NewApiConfig(password string, sessions *map[string]time.Time) *apiConfig {
+	cfg := apiConfig{
+		password:        password,
+		sessions:        sessions,
+		sessionDuration: time.Hour,
+	}
+
+	go func() {
+		ticker := time.NewTicker(time.Minute * 10)
+		for t := range ticker.C {
+			log.Println("Updating stored sessions")
+			for k, v := range *cfg.sessions {
+				if t.After(v) {
+					delete(*cfg.sessions, k)
+					log.Printf("Session %s deleted", k)
+				}
+			}
+		}
+	}()
+
+	return &cfg
 }
 
 func handleFavicon(w http.ResponseWriter, r *http.Request) {
@@ -23,39 +49,41 @@ func handleHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
-	tokenJSON := struct {
-		Token string `json:"token"`
+	passStruct := struct {
+		Password string `json:"password"`
 	}{}
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&tokenJSON)
+	err := decoder.Decode(&passStruct)
 	if err != nil {
 		log.Printf("error decoding request body: %v", err)
-		w.WriteHeader(http.StatusForbidden)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if tokenJSON.Token != a.password {
-		log.Printf("invalid login with token %s", tokenJSON.Token)
-		w.WriteHeader(http.StatusForbidden)
+	password := passStruct.Password
+	if password != a.password {
+		log.Printf("invalid login with password %s", password)
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	log.Printf("Successful login from %s with %s", r.RemoteAddr, tokenJSON.Token)
 
+	log.Printf("Successful login from %s with %s", r.RemoteAddr, password)
 	sessionID := uuid.New().String()
-	expiresAt := time.Now().Add(time.Hour)
-	log.Printf("Starting session %s", sessionID)
+	expiresAt := time.Now().Add(a.sessionDuration)
 
+	log.Printf("Starting session %s", sessionID)
 	sessionCookie := &http.Cookie{
 		Name:     "session_id",
 		Value:    sessionID,
 		Expires:  expiresAt,
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Path:     "/",
+		// SameSite: http.SameSiteLaxMode,
+		Path: "/",
 		// Domain:   ".app.localhost",
 	}
 	http.SetCookie(w, sessionCookie)
 	(*a.sessions)[sessionID] = expiresAt
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -101,4 +129,42 @@ func (a *apiConfig) sessionMiddleware(h func(http.ResponseWriter, *http.Request)
 		}
 		h(w, r)
 	}
+}
+
+func handleUpload(w http.ResponseWriter, req *http.Request) {
+	req.ParseMultipartForm(1000 << 20)
+	file, handler, err := req.FormFile("videoFile")
+	if err != nil {
+		log.Println("error retrieving file:", err)
+		w.WriteHeader(404)
+		return
+	}
+	defer file.Close()
+
+	log.Printf("Uploaded File: %+v\n", handler.Filename)
+	log.Printf("File Size: %+v\n", handler.Size)
+	log.Printf("MIME Header: %+v\n", handler.Header)
+
+	localFile, err := os.Create("uploadedVideo.mp4")
+	if err != nil {
+		log.Println("error creating local file:", err)
+		return
+	}
+	defer localFile.Close()
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		log.Println("error reading uploaded file:", err)
+		return
+	}
+
+	_, err = localFile.Write(fileBytes)
+	if err != nil {
+		log.Println("error writing to local file:", err)
+		return
+	}
+
+	log.Println("File uploaded")
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte("File uploaded!"))
 }
