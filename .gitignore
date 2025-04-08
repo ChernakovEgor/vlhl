@@ -2,6 +2,7 @@
 ./media/
 *.mp4
 .DS_Store
+vl_hl
 
 # Binaries for programs and plugins
 *.exe
