@@ -1,27 +1,33 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log"
 	"os"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/ChernakovEgor/vl_hl/internal/database"
+
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 type apiConfig struct {
 	password        string
 	sessions        *map[string]time.Time
 	sessionDuration time.Duration
+	db              *database.Queries
 }
 
-func NewApiConfig(password string, sessions *map[string]time.Time) *apiConfig {
+func NewApiConfig(password string, sessions *map[string]time.Time, db *database.Queries) *apiConfig {
 	cfg := apiConfig{
 		password:        password,
 		sessions:        sessions,
 		sessionDuration: time.Hour,
+		db:              db,
 	}
 
 	go func() {
@@ -83,6 +89,12 @@ func (a *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, sessionCookie)
 	(*a.sessions)[sessionID] = expiresAt
+
+	res, err := a.db.Ping(context.Background())
+	if err != nil {
+		log.Printf("error quering db: %v", err)
+	}
+	log.Printf("Ping from db: %v", res)
 
 	w.WriteHeader(http.StatusOK)
 }

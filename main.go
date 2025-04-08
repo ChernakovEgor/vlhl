@@ -1,12 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/ChernakovEgor/vl_hl/internal/database"
 	"github.com/joho/godotenv"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
@@ -15,10 +18,16 @@ func main() {
 		log.Fatalf("loading .env file: %v", err)
 	}
 
-	sessions := make(map[string]time.Time)
-	cfg := NewApiConfig(os.Getenv("PASSWORD"), &sessions)
-	mux := http.NewServeMux()
+	conn, err := sql.Open("sqlite3", "file:./sql/vlhl.db")
+	if err != nil {
+		log.Fatalf("connecting to database: %v", err)
+	}
+	db := database.New(conn)
 
+	sessions := make(map[string]time.Time)
+	cfg := NewApiConfig(os.Getenv("PASSWORD"), &sessions, db)
+
+	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/v1/login", cfg.handleLogin)
 	mux.HandleFunc("POST /api/v1/upload", handleUpload)
 	mux.HandleFunc("GET /static/", cfg.sessionMiddlewareHandler(
