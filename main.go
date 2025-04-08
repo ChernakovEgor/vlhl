@@ -17,8 +17,8 @@ const SECRET = "secret"
 func main() {
 	http.HandleFunc("POST /api/v1/login", handleLogin)
 	http.HandleFunc("POST /api/v1/upload", handleUpload)
-	// http.HandleFunc("GET /static/", sessionMiddleware(http.StripPrefix("/static/", http.FileServer(http.Dir("./static")))))
-	http.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	http.HandleFunc("GET /static/", sessionMiddleware(http.StripPrefix("/static/", http.FileServer(http.Dir("./static")))))
+	// http.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	http.HandleFunc("GET /", handleLanding)
 
 	log.Println("starting web server")
@@ -53,6 +53,8 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(time.Hour),
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
+		Path:     "/",
+		// Domain:   ".app.localhost",
 	}
 	http.SetCookie(w, sessionCookie)
 	w.WriteHeader(http.StatusOK)
@@ -60,6 +62,8 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 
 func handleLanding(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.URL.Path)
+	log.Println(r.Header)
+	log.Println("Cookies:", r.Cookies())
 	if r.URL.Path != "/" {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -110,6 +114,8 @@ func sessionMiddleware(s http.Handler) func(http.ResponseWriter, *http.Request) 
 		sessionCookie, err := r.Cookie("session_id")
 		if err != nil {
 			log.Printf("No cookie found.")
+			w.WriteHeader(http.StatusNotFound)
+			return
 		}
 		log.Printf("Found cookie: %s", sessionCookie.Value)
 
