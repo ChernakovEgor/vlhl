@@ -25,17 +25,20 @@ func main() {
 	db := database.New(conn)
 
 	sessions := make(map[string]time.Time)
-	cfg := NewApiConfig(os.Getenv("PASSWORD"), &sessions, db)
-
+	cfg := NewApiConfig(os.Getenv("BASE_URL"), os.Getenv("PASSWORD"), &sessions, db)
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/v1/login", cfg.handleLogin)
-	mux.HandleFunc("POST /api/v1/upload", handleUpload)
+
+	// middleware endpoints
+	mux.HandleFunc("POST /api/v1/upload", cfg.sessionMiddleware(handleUpload))
 	mux.HandleFunc("GET /static/", cfg.sessionMiddlewareHandler(
 		http.StripPrefix("/static/", http.FileServer(http.Dir("./static")))),
 	)
-	mux.HandleFunc("GET /favicon.ico", handleFavicon)
 	mux.HandleFunc("GET /home", cfg.sessionMiddleware(handleHome))
-	mux.HandleFunc("GET /", handleRoot)
+
+	// public endpoints
+	mux.HandleFunc("POST /api/v1/login", cfg.handleLogin)
+	mux.HandleFunc("GET /favicon.ico", handleFavicon)
+	mux.HandleFunc("GET /", cfg.handleRoot)
 
 	port := os.Getenv("PORT")
 	log.Printf("Starting web server on port %s", port)

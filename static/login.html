@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="{{.}}">
     <title>Login</title>
     <!-- <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"> -->
     <!-- <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"> -->
     <!-- <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"> -->
     <!-- <link rel="manifest" href="/site.webmanifest"> -->
     <style>
-        /* Apply box-sizing globally to prevent overflow */
         * {
             box-sizing: border-box;
         }
@@ -83,7 +83,7 @@
             }
 
             // Send the password to the server via a POST request (AJAX)
-            fetch('http://localhost:8080/api/v1/login', {
+            fetch('./api/v1/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -92,7 +92,7 @@
             })
             .then(response => {
               if (response.ok) {
-                window.location.href = "http://localhost:8080/home"
+                window.location.href = "./home"
               } else {
                 document.getElementById("errorMessage").innerText = "An error occurred. Please try again.";
               }

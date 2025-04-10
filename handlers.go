@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"html/template"
 	"io"
 	"log"
 	"os"
@@ -16,14 +17,16 @@ import (
 )
 
 type apiConfig struct {
+	baseURL         string
 	password        string
 	sessions        *map[string]time.Time
 	sessionDuration time.Duration
 	db              *database.Queries
 }
 
-func NewApiConfig(password string, sessions *map[string]time.Time, db *database.Queries) *apiConfig {
+func NewApiConfig(baseURL, password string, sessions *map[string]time.Time, db *database.Queries) *apiConfig {
 	cfg := apiConfig{
+		baseURL:         baseURL,
 		password:        password,
 		sessions:        sessions,
 		sessionDuration: time.Hour,
@@ -99,12 +102,13 @@ func (a *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func handleRoot(w http.ResponseWriter, r *http.Request) {
+func (a *apiConfig) handleRoot(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	http.ServeFile(w, r, "./static/login.html")
+
+	a.serveTemplatedHTML(w, "./static/login.html")
 }
 
 func (a *apiConfig) sessionMiddlewareHandler(h http.Handler) func(http.ResponseWriter, *http.Request) {
@@ -179,4 +183,28 @@ func handleUpload(w http.ResponseWriter, req *http.Request) {
 	log.Println("File uploaded")
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte("File uploaded!"))
+}
+
+func (a *apiConfig) serveTemplatedHTML(w http.ResponseWriter, htmlPath string) {
+	t := template.New(htmlPath)
+	fileBytes, err := os.ReadFile(htmlPath)
+	if err != nil {
+		log.Printf("error opening %s: %v", htmlPath, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	parsed, err := t.Parse(string(fileBytes))
+	if err != nil {
+		log.Printf("error parsing %s template: %v", htmlPath, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = parsed.Execute(w, a.baseURL)
+	if err != nil {
+		log.Printf("error executing %s template: %v", htmlPath, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
