@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/ChernakovEgor/vl_hl/internal/database"
+	"github.com/ChernakovEgor/vlhl/internal/database"
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )

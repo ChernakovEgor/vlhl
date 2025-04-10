@@ -1,3 +1,5 @@
+github.com/ChernakovEgor/vl_hl v0.0.0-20250410184210-693ea850665c h1:Ec0dfP/+JGLO9U9w9zHWcPpxk9bklNENIa1BNokicyA=
+github.com/ChernakovEgor/vl_hl v0.0.0-20250410184210-693ea850665c/go.mod h1:rkkoTd3b8rTdxf/MuxxAJkDgaKbyWO93Uwd6YabD3hU=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
