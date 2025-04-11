@@ -14,7 +14,7 @@ test:
 	go test ./...
 
 run:
-	go build && ./vl_hl
+	go build && ./vlhl
 
 clean:
 	go clean

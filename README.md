@@ -9,3 +9,4 @@ A simple service for streaming & editing filmed volleyball games.
 - **subdomain handling**
 - **html base_url templating** _in progress..._
 - **log levels**
+- **add TLS/https**
